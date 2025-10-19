@@ -1,7 +1,7 @@
 "use client";
 import { db } from "@/firebase";
 import { deleteDoc, doc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { BounceLoader } from "react-spinners";
@@ -19,6 +19,8 @@ interface Props {
 
 const ItemDeleteDialog = ({ item, onSucess, onClose }: Props) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const params = new URLSearchParams(searchParams);
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async () => {
@@ -26,6 +28,11 @@ const ItemDeleteDialog = ({ item, onSucess, onClose }: Props) => {
       setLoading(true);
       await deleteDoc(doc(db, "Items", item.id));
       toast.success("Item deleted successfully");
+      const currentPage = params.get("page");
+      if (currentPage) {
+        params.delete("page");
+        router.push(`?${params.toString()}`);
+      }
       router.refresh();
       onSucess();
     } catch (error) {
