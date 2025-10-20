@@ -62,6 +62,7 @@ const ItemDeleteDialog = ({ item, onSucess, onClose }: Props) => {
           </button>
           <button
             onClick={onSubmit}
+            disabled={loading}
             className="w-20 flex items-center justify-center py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
           >
             {loading ? <BounceLoader size={24} color="#fff" /> : "Delete"}

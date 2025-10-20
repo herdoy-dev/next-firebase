@@ -57,6 +57,7 @@ const ListInput = () => {
           className="border-none focus:outline-none outline-none flex-1 px-3 text-gray-600"
         />
         <button
+          disabled={isSubmitting}
           type="submit"
           className="py-3 cursor-pointer w-16 flex items-center justify-center border-none outline-none bg-green-500 text-white"
         >
