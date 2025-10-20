@@ -1,3 +1,4 @@
+import ItemSearch from "@/components/item-search";
 import ListInput from "@/components/list-input";
 import ListItem from "@/components/list-item";
 import Pagination from "@/components/pagination";
@@ -6,61 +7,58 @@ import {
   collection,
   DocumentData,
   getDocs,
-  limit,
+  orderBy,
   query,
-  startAfter,
 } from "firebase/firestore";
 
 interface Props {
   searchParams: Promise<{
-    page: string;
+    page?: string;
+    search?: string;
   }>;
 }
 
 export default async function Home({ searchParams }: Props) {
-  const patams = await searchParams;
-  const page = parseInt(patams.page) || 1;
+  const params = await searchParams;
+  const page = parseInt(params.page ?? "1");
+  const search = params.search?.trim().toLowerCase() ?? "";
   const pageSize = 5;
 
   const itemsRef = collection(db, "Items");
+  const q = query(itemsRef, orderBy("item"));
 
-  let documentSnapshots = query(itemsRef, limit(pageSize));
-
-  if (page > 1) {
-    const prevDocs = await getDocs(
-      query(itemsRef, limit((page - 1) * pageSize))
-    );
-    const lastVisible = prevDocs.docs[prevDocs.docs.length - 1];
-    if (lastVisible) {
-      documentSnapshots = query(
-        itemsRef,
-        startAfter(lastVisible),
-        limit(pageSize)
-      );
-    }
-  }
-
-  const snapshot = await getDocs(documentSnapshots);
-
-  const items = snapshot.docs.map((doc) => ({
+  // Fetch all items
+  const snapshot = await getDocs(q);
+  const allItems = snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   })) as DocumentData[];
 
-  const totalDocs = (await getDocs(itemsRef)).size;
+  // Filter items based on search text
+  const filteredItems = search
+    ? allItems.filter((item) => item.item.toLowerCase().includes(search))
+    : allItems;
+
+  // Get total item count (matching search)
+  const totalDocs = filteredItems.length;
+
+  // Pagination
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalDocs);
+  const items = filteredItems.slice(startIndex, endIndex);
 
   return (
     <div className="h-screen flex justify-center p-4">
       <div className="w-3xl bg-gray-200 rounded-3xl shadow p-4">
         <ListInput />
+        <div className="w-full">
+          <ItemSearch />
+        </div>
+
         <div className="flex flex-col items-center gap-3 py-4">
-          {items.length > 0 ? (
-            items.map((item) => (
-              <ListItem key={item.id} item={{ id: item.id, data: item.item }} />
-            ))
-          ) : (
-            <p className="text-gray-600">No items found.</p>
-          )}
+          {items.map((item) => (
+            <ListItem key={item.id} item={{ id: item.id, data: item.item }} />
+          ))}
 
           <div className="w-full py-4">
             <Pagination
